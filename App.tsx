@@ -2,26 +2,28 @@
 import React, { useState } from 'react';
 import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
 
-// This component is defined outside App to prevent re-creation on every render.
-const PhoneMockup: React.FC = () => {
-  return (
-    <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[10px] rounded-[2.5rem] h-[250px] w-[125px] sm:h-[400px] sm:w-[200px] md:h-[500px] md:w-[250px] shadow-2xl">
-        <div className="h-[20px] w-[3px] bg-gray-800 absolute -start-[13px] top-[50px] rounded-s-lg"></div>
-        <div className="h-[32px] w-[3px] bg-gray-800 absolute -start-[13px] top-[80px] rounded-s-lg"></div>
-        <div className="h-[32px] w-[3px] bg-gray-800 absolute -start-[13px] top-[120px] rounded-s-lg"></div>
-        <div className="h-[48px] w-[3px] bg-gray-800 absolute -end-[13px] top-[100px] rounded-e-lg"></div>
-        <div className="rounded-[2rem] overflow-hidden w-full h-full bg-gradient-to-br from-cyan-100 to-blue-200">
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-slate-700">
-                <p className="text-xs sm:text-lg font-bold">Desafio 7 Dias</p>
-                <div className="w-12 h-12 sm:w-20 sm:h-20 my-2 sm:my-4">
-                    <LotusIcon />
-                </div>
-                <p className="text-[8px] sm:text-xs font-light">Respirar para Transformar</p>
-            </div>
-        </div>
-    </div>
-  );
-};
+const features = [
+  {
+    icon: <BrainIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    title: 'Clareza Mental',
+    description: 'Reduza o ruído mental e encontre o foco.',
+  },
+  {
+    icon: <StrengthIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    title: 'Força Interior',
+    description: 'Construa resiliência para lidar com desafios.',
+  },
+  {
+    icon: <MeditationIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    title: 'Presença Plena',
+    description: 'Viva o momento presente com mais intensidade.',
+  },
+  {
+    icon: <LotusIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    title: 'Equilíbrio Emocional',
+    description: 'Aprenda a regular suas emoções de forma saudável.',
+  },
+];
 
 
 export default function App() {
@@ -31,118 +33,93 @@ export default function App() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // In a real application, you would handle the form submission here.
     alert(`Obrigado, ${name}! Seu cadastro foi recebido.`);
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#d7e9f8] via-[#e8f3f2] to-[#d8eee9] text-slate-800 font-sans overflow-x-hidden">
-      <main className="container mx-auto px-6 py-12">
-        
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16">
+    <div
+      style={{
+        backgroundImage: "url('https://i.ibb.co/dJ0yRQq7/Untitled-design.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+      className="min-h-screen w-full text-slate-800 font-sans"
+    >
+      <main className="container mx-auto px-4 pt-8 md:pt-16 pb-0 grid md:grid-cols-2 gap-8 items-center">
+        {/* Content Column */}
+        <div className="bg-white/30 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg">
+          <p className="font-semibold text-slate-600 mb-2">Desafio dos 7 Dias com <span className="font-bold">Thiago De Pizzol</span></p>
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+            Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença</span>
+          </h1>
+          <p className="mt-2 text-lg text-slate-600">
+            7 Técnicas respiratórias para equilíbrio do sistema nervoso.
+          </p>
 
-          {/* Left Column: Text & Form */}
-          <div className="w-full lg:w-1/2 max-w-lg text-center lg:text-left">
-            <p className="font-semibold text-slate-600 mb-2">Desafio 7 Dias</p>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-              Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença</span>
-            </h1>
-            <p className="mt-4 text-lg text-slate-600">
-              7 Técnicas Respiratórias Para Equilíbrio do Sistema Nervoso
-            </p>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <input
+              type="text"
+              placeholder="Nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Celular"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
+              required
+            />
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-              <input 
-                type="text" 
-                placeholder="Nome" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-                required
-              />
-              <input 
-                type="tel" 
-                placeholder="Celular"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-                required
-              />
-              <input 
-                type="email" 
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-                required
-              />
-
-              <div className="pt-4">
-                <p className="text-4xl font-bold text-slate-700">3 x R$9,90</p>
-                <p className="text-sm text-slate-500 mt-1">Aceso imediato às 7 técnicas respiratórias</p>
-              </div>
-
-              <button type="submit" className="w-full mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#6a9370] transition-colors duration-300 transform hover:scale-105">
-                ADQUIRIR AGORA
-              </button>
-            </form>
-          </div>
-
-          {/* Right Column: Image */}
-          <div className="w-full lg:w-1/2 flex items-center justify-center mt-10 lg:mt-0">
-            <div className="relative">
-                <img 
-                    src="https://picsum.photos/seed/wellness-man/600/800" 
-                    alt="Man smiling in a calm environment" 
-                    className="rounded-full object-cover w-[300px] h-[300px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px] opacity-20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-sm rounded-full w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[550px] lg:h-[550px]"></div>
-                <div className="relative flex items-center justify-center transform lg:scale-110">
-                    <img 
-                        src="https://picsum.photos/seed/happy-person/600/900" 
-                        alt="A happy person holding a phone"
-                        className="object-cover w-full max-w-sm rounded-[50px] opacity-0"
-                    />
-                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                        <PhoneMockup />
-                    </div>
-                    <div className="absolute -bottom-20 -right-20 lg:-bottom-24 lg:-right-28 text-white p-2 bg-gradient-to-tr from-white/30 to-transparent backdrop-blur-md rounded-full w-40 h-40 lg:w-52 lg:h-52 hidden lg:block">
-                      <div className="w-full h-full border-2 border-dashed border-white/50 rounded-full"></div>
-                    </div>
-                    <div className="absolute -top-16 -left-16 text-white p-2 bg-gradient-to-tr from-white/30 to-transparent backdrop-blur-md rounded-full w-32 h-32 hidden lg:block">
-                        <div className="w-full h-full border-2 border-dashed border-white/50 rounded-full"></div>
-                    </div>
-                </div>
+            <div className="pt-4 text-center">
+              <p className="text-4xl font-bold text-slate-700">3 x R$9,90</p>
+              <p className="text-sm text-slate-500 mt-1">Acesso imediato às 7 técnicas respiratórias</p>
             </div>
+
+            <button type="submit" className="w-full mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#6a9370] transition-colors duration-300 transform hover:scale-105">
+              ADQUIRIR AGORA
+            </button>
+          </form>
         </div>
 
-        {/* Features Section */}
-        <div className="mt-24 lg:mt-32">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 text-center text-slate-700">
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 p-3 bg-white/70 rounded-full shadow-md mb-4">
-                <BrainIcon />
-              </div>
-              <p className="font-semibold">Reduza o Estresse e a Ansiedade</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 p-3 bg-white/70 rounded-full shadow-md mb-4">
-                <StrengthIcon />
-              </div>
-              <p className="font-semibold">Aumente Foco e Força Interior</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 p-3 bg-white/70 rounded-full shadow-md mb-4">
-                <MeditationIcon />
-              </div>
-              <p className="font-semibold">Cultive a Presença e a Calma Diária</p>
-            </div>
-          </div>
-          <p className="text-center mt-12 text-slate-500 max-w-2xl mx-auto">
-            Parte de um treinamento respiratório para regular o sistema nervoso.
-          </p>
+        {/* Image Column */}
+        <div className="hidden md:flex justify-center items-center">
+          <img 
+            src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png" 
+            alt="Homem sorrindo" 
+            className="max-w-md lg:max-w-lg drop-shadow-2xl"
+          />
         </div>
       </main>
+
+      <section className="py-12 bg-white/30 backdrop-blur-sm mt-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-8 text-slate-700">O que você vai conquistar</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="text-center p-4">
+                <div className="flex justify-center mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="font-bold text-xl mb-2">{feature.title}</h3>
+                <p className="text-slate-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

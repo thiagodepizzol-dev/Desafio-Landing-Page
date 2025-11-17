@@ -31,10 +31,13 @@ export default function App() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    alert(`Obrigado, ${name}! Seu cadastro foi recebido.`);
-  };
+  // O link base da Hotmart
+  const hotmartLink = "https://pay.hotmart.com/F102989418Q";
+
+  // Constrói a URL final com o e-mail do comprador para rastreamento
+  // Hotmart usa o parâmetro 'email' para pré-preencher o campo de e-mail no checkout
+  const checkoutUrl = email ? `${hotmartLink}?email=${encodeURIComponent(email)}` : hotmartLink;
+
 
   return (
     <div
@@ -57,7 +60,7 @@ export default function App() {
             7 Técnicas respiratórias para equilíbrio do sistema nervoso.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <form onSubmit={(e) => e.preventDefault()} className="mt-8 space-y-4">
             <input
               type="text"
               placeholder="Nome"
@@ -88,17 +91,22 @@ export default function App() {
               <p className="text-sm text-slate-500 mt-1">Acesso imediato às 7 técnicas respiratórias</p>
             </div>
 
-            <button type="submit" className="w-full mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#6a9370] transition-colors duration-300 transform hover:scale-105">
+            <a
+              href={checkoutUrl}
+              target="_blank" // Abre em uma nova aba para não perder a página original
+              rel="noopener noreferrer"
+              className="block w-full text-center mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#6a9370] transition-colors duration-300 transform hover:scale-105"
+            >
               ADQUIRIR AGORA
-            </button>
+            </a>
           </form>
         </div>
 
         {/* Image Column */}
         <div className="hidden md:flex justify-center items-center">
-          <img 
-            src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png" 
-            alt="Homem sorrindo" 
+          <img
+            src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png"
+            alt="Homem sorrindo"
             className="max-w-md lg:max-w-lg drop-shadow-2xl"
           />
         </div>

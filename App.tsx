@@ -25,19 +25,51 @@ const features = [
   },
 ];
 
-
 export default function App() {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
+  const [errors, setErrors] = useState({ name: '', phone: '', email: '' });
 
-  // O link base da Hotmart
-  const hotmartLink = "https://pay.hotmart.com/F102989418Q";
+  const validate = () => {
+    let tempErrors = { name: '', phone: '', email: '' };
+    let isValid = true;
 
-  // Constrói a URL final com o e-mail do comprador para rastreamento
-  // Hotmart usa o parâmetro 'email' para pré-preencher o campo de e-mail no checkout
-  const checkoutUrl = email ? `${hotmartLink}?email=${encodeURIComponent(email)}` : hotmartLink;
+    if (!formData.name.trim()) {
+      tempErrors.name = 'O nome é obrigatório.';
+      isValid = false;
+    }
 
+    if (!formData.email.trim()) {
+      tempErrors.email = 'O email é obrigatório.';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      tempErrors.email = 'Formato de email inválido.';
+      isValid = false;
+    }
+
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (!formData.phone.trim()) {
+      tempErrors.phone = 'O celular é obrigatório.';
+      isValid = false;
+    } else if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+      tempErrors.phone = 'O celular deve ter 10 ou 11 dígitos, incluindo o DDD.';
+      isValid = false;
+    }
+
+    setErrors(tempErrors);
+    return isValid;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (validate()) {
+      window.location.href = 'https://pay.hotmart.com/F102989418Q';
+    }
+  };
 
   return (
     <div
@@ -60,46 +92,53 @@ export default function App() {
             7 Técnicas respiratórias para equilíbrio do sistema nervoso.
           </p>
 
-          <form onSubmit={(e) => e.preventDefault()} className="mt-8 space-y-4">
-            <input
-              type="text"
-              placeholder="Nome"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-              required
-            />
-            <input
-              type="tel"
-              placeholder="Celular"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-3 rounded-lg bg-white shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7ca982]"
-              required
-            />
+          <div className="mt-8 space-y-4">
+            <div>
+              <input
+                type="text"
+                name="name"
+                placeholder="Nome"
+                value={formData.name}
+                onChange={handleChange}
+                className={`w-full px-5 py-3 rounded-lg bg-white shadow-sm border focus:outline-none focus:ring-2 ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#7ca982]'}`}
+              />
+              {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
+            </div>
+            <div>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Celular (com DDD)"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full px-5 py-3 rounded-lg bg-white shadow-sm border focus:outline-none focus:ring-2 ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#7ca982]'}`}
+              />
+              {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
+            </div>
+            <div>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`w-full px-5 py-3 rounded-lg bg-white shadow-sm border focus:outline-none focus:ring-2 ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-[#7ca982]'}`}
+              />
+              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+            </div>
 
             <div className="pt-4 text-center">
               <p className="text-4xl font-bold text-slate-700">3 x R$9,90</p>
               <p className="text-sm text-slate-500 mt-1">Acesso imediato às 7 técnicas respiratórias</p>
             </div>
 
-            <a
-              href={checkoutUrl}
-              target="_blank" // Abre em uma nova aba para não perder a página original
-              rel="noopener noreferrer"
+            <button
+              onClick={handleSubmit}
               className="block w-full text-center mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg hover:bg-[#6a9370] transition-colors duration-300 transform hover:scale-105"
             >
               ADQUIRIR AGORA
-            </a>
-          </form>
+            </button>
+          </div>
         </div>
 
         {/* Image Column */}

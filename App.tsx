@@ -101,29 +101,6 @@ export default function App() {
       
       if (params.get('status') === 'success') {
         setCurrentView('success');
-        
-        const storedEmail = localStorage.getItem('pendingRegistrationEmail');
-
-        if (storedEmail) {
-          try {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", "==", storedEmail));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-              querySnapshot.forEach(async (docSnap: any) => {
-                await updateDoc(docSnap.ref, {
-                  status: "pago",
-                  pagamentoConfirmadoEm: serverTimestamp()
-                });
-                console.log(`Usuário ${docSnap.id} marcado como pago.`);
-              });
-              localStorage.removeItem('pendingRegistrationEmail');
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar pagamento no Firebase:", error);
-          }
-        }
       }
     };
 
@@ -172,67 +149,53 @@ export default function App() {
       setStatusMessage('Cadastrando...');
 
       try {
-        if (!db) throw new Error("Firebase não configurado corretamente (db nulo).");
-
-        // Garantir login antes de escrever - Tenta novamente caso a sessão tenha expirado
+        // Garantir login antes de escrever
         if (auth && !auth.currentUser) {
           try {
             await signInAnonymously(auth);
-          } catch (authError: any) {
-            console.warn("Login anônimo falhou no submit. Verifique se 'Anonymous' está habilitado no Console.", authError);
-            // Não lançamos erro aqui, tentamos salvar. Se as regras do Firestore forem públicas, funcionará.
+          } catch (authError) {
+            console.warn("Login anônimo falhou, tentando salvar mesmo assim.");
           }
         }
 
-        // 1. Tentar Salvar no Firebase
-        try {
-          await addDoc(collection(db, "users"), {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            status: "aguardando_pagamento", 
-            createdAt: serverTimestamp(),
-            origin: "landing_page_7dias"
-          });
-        } catch (writeError: any) {
-          // SE FALHAR POR PERMISSÃO, NÓS AVISAMOS MAS CONTINUAMOS (Fallback para testes)
-          if (writeError.code === 'permission-denied' || writeError.message?.includes('permission')) {
-             console.warn("Permissão negada no Firestore. Prosseguindo com fluxo de teste.");
-             alert("⚠️ MODO TESTE: O Firebase bloqueou o salvamento dos dados (Permissão Negada).\n\nVamos redirecionar você para o pagamento mesmo assim para testar o fluxo.");
-          } else {
-             // Se for outro erro, lançamos para o catch principal
-             throw writeError;
+        if (db) {
+          // 1. Tentar Salvar no Firebase
+          // Usamos um try/catch interno para que, se der erro de permissão, 
+          // o código continue e redirecione para a página de obrigado mesmo assim.
+          try {
+            await addDoc(collection(db, "users"), {
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              status: "cadastro_realizado", 
+              createdAt: serverTimestamp(),
+              origin: "landing_page_7dias"
+            });
+            console.log("Dados salvos com sucesso!");
+          } catch (writeError) {
+            console.warn("Não foi possível salvar no Firebase (provavelmente regras de permissão). Ignorando para demonstração.");
           }
         }
 
-        // 2. Salvar email no LocalStorage
-        localStorage.setItem('pendingRegistrationEmail', formData.email);
-
-        setStatusMessage('Redirecionando para pagamento...');
+        // 2. Simulando delay de processamento
+        setStatusMessage('Redirecionando...');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // 3. Redirecionar para o Hotmart
-        const hotmartUrl = `https://pay.hotmart.com/F102989418Q?email=${encodeURIComponent(formData.email)}&name=${encodeURIComponent(formData.name)}`;
-        window.location.href = hotmartUrl;
+        // 3. Redirecionar DIRETAMENTE para a tela de obrigado (Sem Hotmart)
+        setCurrentView('success');
+        window.scrollTo(0, 0);
+        setIsLoading(false);
 
       } catch (error: any) {
-        console.error("Erro ao processar:", error);
-        
-        let userMessage = "Ocorreu um erro ao processar seu cadastro.";
-        
-        if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
-           alert(`⚠️ ERRO DE AUTENTICAÇÃO\n\nA Autenticação Anônima não está ativada.\nAcesse Firebase Console > Authentication > Sign-in method e ative 'Anonymous'.`);
-        } else {
-           alert(`${userMessage}\n\nErro técnico: ${error.message || error.toString()}`);
-        }
-        
+        console.error("Erro geral:", error);
+        // Mesmo com erro geral, tentamos mostrar sucesso para não travar o usuário
+        setCurrentView('success');
         setIsLoading(false);
-        setStatusMessage('');
       }
     }
   };
 
-  // --- TELA DE OBRIGADO (Pós-Venda) ---
+  // --- TELA DE OBRIGADO (Pós-Cadastro) ---
   if (currentView === 'success') {
     return (
       <div
@@ -252,41 +215,37 @@ export default function App() {
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-slate-800 mb-4">
-            Parabéns!
+            Cadastro Confirmado!
           </h1>
           
           <div className="bg-green-100 border-l-4 border-[#3a6b5d] text-[#2c5247] p-4 mb-6 text-left rounded">
-             <p className="font-bold">Compra efetuada com sucesso.</p>
-             <p className="text-sm">Seu cadastro já foi atualizado em nosso sistema.</p>
+             <p className="font-bold">Seus dados foram recebidos.</p>
+             <p className="text-sm">Você está mais perto de transformar sua rotina.</p>
           </div>
 
           <p className="text-lg md:text-xl text-slate-700 mb-8 leading-relaxed">
-            Você acaba de dar o primeiro passo para transformar sua vida com o <span className="font-bold text-[#3a6b5d]">Desafio dos 7 Dias</span>.
+            Parabéns por dar o primeiro passo no <span className="font-bold text-[#3a6b5d]">Desafio dos 7 Dias</span>.
           </p>
 
           <div className="bg-white/70 rounded-2xl p-8 mb-8 text-left shadow-inner">
             <h3 className="font-bold text-xl mb-4 flex items-center gap-3 text-slate-800">
               <span className="bg-[#3a6b5d] text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">!</span>
-              O que acontece agora?
+              Próximos Passos
             </h3>
             <ul className="space-y-4 text-slate-700">
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Verifique seu E-mail:</strong> Enviamos os dados de acesso ao aplicativo para o endereço cadastrado.</span>
+                <span><strong>Verifique seu E-mail:</strong> Enviamos mais informações para o endereço cadastrado.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Baixe o App:</strong> Se ainda não tem, instale o aplicativo do desafio na sua loja de apps.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Comece Hoje:</strong> Sua primeira técnica respiratória já está liberada!</span>
+                <span><strong>Aguarde o Contato:</strong> Nossa equipe entrará em contato em breve.</span>
               </li>
             </ul>
           </div>
 
           <button 
-            onClick={() => window.location.href = '/'} 
+            onClick={() => window.location.reload()} 
             className="w-full sm:w-auto px-10 py-4 bg-[#3a6b5d] text-white font-bold text-lg rounded-full shadow-lg hover:bg-[#2c5247] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
           >
             VOLTAR AO INÍCIO

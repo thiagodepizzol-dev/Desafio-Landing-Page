@@ -184,7 +184,7 @@ export default function App() {
           }
         }
 
-        // 1. Salvar no Firebase
+        // 1. Tentar Salvar no Firebase
         try {
           await addDoc(collection(db, "users"), {
             name: formData.name,
@@ -195,8 +195,14 @@ export default function App() {
             origin: "landing_page_7dias"
           });
         } catch (writeError: any) {
-          // Se for erro de permissão, lançamos para tratar no catch abaixo com mensagem específica
-          throw writeError;
+          // SE FALHAR POR PERMISSÃO, NÓS AVISAMOS MAS CONTINUAMOS (Fallback para testes)
+          if (writeError.code === 'permission-denied' || writeError.message?.includes('permission')) {
+             console.warn("Permissão negada no Firestore. Prosseguindo com fluxo de teste.");
+             alert("⚠️ MODO TESTE: O Firebase bloqueou o salvamento dos dados (Permissão Negada).\n\nVamos redirecionar você para o pagamento mesmo assim para testar o fluxo.");
+          } else {
+             // Se for outro erro, lançamos para o catch principal
+             throw writeError;
+          }
         }
 
         // 2. Salvar email no LocalStorage
@@ -210,14 +216,11 @@ export default function App() {
         window.location.href = hotmartUrl;
 
       } catch (error: any) {
-        console.error("Erro ao salvar dados:", error);
+        console.error("Erro ao processar:", error);
         
         let userMessage = "Ocorreu um erro ao processar seu cadastro.";
         
-        // Tratamento específico de erros comuns com instruções de correção
-        if (error.code === 'permission-denied' || error.message?.includes('permission')) {
-           alert(`⚠️ PERMISSÃO NEGADA NO FIREBASE\n\nPara corrigir isso, vá no Console do Firebase > Firestore Database > Rules e altere para:\n\nallow read, write: if true;`);
-        } else if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
+        if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
            alert(`⚠️ ERRO DE AUTENTICAÇÃO\n\nA Autenticação Anônima não está ativada.\nAcesse Firebase Console > Authentication > Sign-in method e ative 'Anonymous'.`);
         } else {
            alert(`${userMessage}\n\nErro técnico: ${error.message || error.toString()}`);
@@ -361,18 +364,20 @@ export default function App() {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className={`block w-full text-center mt-4 bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg transition-all duration-300 transform ${isLoading ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#6a9370] hover:scale-105'}`}
+              className={`block w-full mt-4 bg-transparent p-0 border-none shadow-none hover:scale-105 transition-transform duration-300 ${isLoading ? 'opacity-80 cursor-not-allowed' : ''}`}
             >
               {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
+                <div className="w-full bg-[#7ca982] text-white font-bold py-4 rounded-lg shadow-lg flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   {statusMessage || 'PROCESSANDO...'}
-                </span>
+                </div>
               ) : (
-                'INICIAR DESAFIO AGORA'
+                <div className="w-full bg-[#3a6b5d] text-white font-bold py-4 rounded-lg shadow-lg uppercase tracking-wider flex items-center justify-center">
+                  INICIAR DESAFIO AGORA
+                </div>
               )}
             </button>
           </div>

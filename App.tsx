@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
 
@@ -50,22 +49,22 @@ try {
 
 const features = [
   {
-    icon: <BrainIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    icon: <img src="https://i.ibb.co/nhLZZxv/Iniciar-Desafio-Agora.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
     title: 'Clareza Mental',
     description: 'Reduza o ruído mental e encontre o foco.',
   },
   {
-    icon: <StrengthIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    icon: <img src="https://i.ibb.co/scgBYLk/Iniciar-Desafio-Agora-2.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
     title: 'Força Interior',
     description: 'Construa resiliência para lidar com desafios.',
   },
   {
-    icon: <MeditationIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    icon: <img src="https://i.ibb.co/v4GXYJtk/Iniciar-Desafio-Agora-1.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
     title: 'Presença Plena',
     description: 'Viva o momento presente com mais intensidade.',
   },
   {
-    icon: <LotusIcon className="w-8 h-8 text-[#3a6b5d]" />,
+    icon: <img src="https://i.ibb.co/Lz2MT9tF/Iniciar-Desafio-Agora-3.png" alt="Clareza Mental" className="w-auto h-8 object-contain" />,
     title: 'Equilíbrio Emocional',
     description: 'Aprenda a regular suas emoções de forma saudável.',
   },
@@ -175,12 +174,13 @@ export default function App() {
       try {
         if (!db) throw new Error("Firebase não configurado corretamente (db nulo).");
 
-        // Garantir login antes de escrever
+        // Garantir login antes de escrever - Tenta novamente caso a sessão tenha expirado
         if (auth && !auth.currentUser) {
           try {
             await signInAnonymously(auth);
           } catch (authError: any) {
-            console.warn("Login anônimo falhou no submit, tentando salvar mesmo assim...");
+            console.warn("Login anônimo falhou no submit. Verifique se 'Anonymous' está habilitado no Console.", authError);
+            // Não lançamos erro aqui, tentamos salvar. Se as regras do Firestore forem públicas, funcionará.
           }
         }
 
@@ -195,7 +195,7 @@ export default function App() {
             origin: "landing_page_7dias"
           });
         } catch (writeError: any) {
-          // Se for erro de permissão, repassa para o catch externo
+          // Se for erro de permissão, lançamos para tratar no catch abaixo com mensagem específica
           throw writeError;
         }
 
@@ -214,13 +214,13 @@ export default function App() {
         
         let userMessage = "Ocorreu um erro ao processar seu cadastro.";
         
-        // Tratamento específico de erros comuns
+        // Tratamento específico de erros comuns com instruções de correção
         if (error.code === 'permission-denied' || error.message?.includes('permission')) {
-           alert(`⚠️ ERRO DE PERMISSÃO:\n\nO Firebase bloqueou a gravação. Verifique se 'Anonymous Auth' está habilitado e se as Regras do Firestore permitem escrita.`);
+           alert(`⚠️ PERMISSÃO NEGADA NO FIREBASE\n\nPara corrigir isso, vá no Console do Firebase > Firestore Database > Rules e altere para:\n\nallow read, write: if true;`);
         } else if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
-           alert(`⚠️ CONFIGURAÇÃO NECESSÁRIA:\n\nA Autenticação Anônima não está habilitada no Firebase.\n\n1. Acesse o Console do Firebase.\n2. Vá em Authentication > Sign-in method.\n3. Ative o provedor 'Anonymous' (Anônimo).`);
+           alert(`⚠️ ERRO DE AUTENTICAÇÃO\n\nA Autenticação Anônima não está ativada.\nAcesse Firebase Console > Authentication > Sign-in method e ative 'Anonymous'.`);
         } else {
-           alert(`${userMessage}\n\nDetalhes: ${error.message || error.toString()}`);
+           alert(`${userMessage}\n\nErro técnico: ${error.message || error.toString()}`);
         }
         
         setIsLoading(false);
@@ -372,7 +372,7 @@ export default function App() {
                   {statusMessage || 'PROCESSANDO...'}
                 </span>
               ) : (
-                'ADQUIRIR AGORA'
+                'INICIAR DESAFIO AGORA'
               )}
             </button>
           </div>

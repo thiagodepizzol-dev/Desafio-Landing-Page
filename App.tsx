@@ -7,10 +7,6 @@ import {
   getFirestore, 
   collection, 
   addDoc, 
-  query, 
-  where, 
-  getDocs, 
-  updateDoc, 
   serverTimestamp 
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
@@ -91,14 +87,17 @@ export default function App() {
       try {
         if (!auth.currentUser) {
            await signInAnonymously(auth);
-           console.log("Autenticado anonimamente no Firebase");
+           console.log("Autenticado anonimamente no Firebase (UID):", auth.currentUser?.uid);
         }
       } catch (error: any) {
-        console.warn("Aviso: Autenticação anônima falhou.", error.message);
+        if (error.code === 'auth/admin-restricted-operation') {
+          console.warn("AVISO: Autenticação Anônima desabilitada no Console. O app tentará salvar dados como visitante.");
+        } else {
+          console.error("Erro na Autenticação Anônima:", error.message);
+        }
       }
 
       const params = new URLSearchParams(window.location.search);
-      
       if (params.get('status') === 'success') {
         setCurrentView('success');
       }
@@ -146,51 +145,66 @@ export default function App() {
     e.preventDefault();
     if (validate()) {
       setIsLoading(true);
-      setStatusMessage('Cadastrando...');
+      setStatusMessage('Salvando dados...');
 
       try {
-        // Garantir login antes de escrever
+        // Garantir login antes de escrever (Retry)
         if (auth && !auth.currentUser) {
           try {
             await signInAnonymously(auth);
-          } catch (authError) {
-            console.warn("Login anônimo falhou, tentando salvar mesmo assim.");
+          } catch (authError: any) {
+             // Ignora erro de admin-restricted, pois pode ser que as regras do banco sejam publicas
+             if(authError.code !== 'auth/admin-restricted-operation') {
+                console.error("Falha ao tentar logar antes de salvar:", authError);
+             }
           }
         }
 
-        if (db) {
-          // 1. Tentar Salvar no Firebase
-          // Usamos um try/catch interno para que, se der erro de permissão, 
-          // o código continue e redirecione para a página de obrigado mesmo assim.
-          try {
-            await addDoc(collection(db, "users"), {
-              name: formData.name,
-              email: formData.email,
-              phone: formData.phone,
-              status: "cadastro_realizado", 
-              createdAt: serverTimestamp(),
-              origin: "landing_page_7dias"
-            });
-            console.log("Dados salvos com sucesso!");
-          } catch (writeError) {
-            console.warn("Não foi possível salvar no Firebase (provavelmente regras de permissão). Ignorando para demonstração.");
-          }
+        if (!db) {
+          throw new Error("Conexão com Banco de Dados não estabelecida.");
         }
 
-        // 2. Simulando delay de processamento
+        console.log("Enviando dados para o Firestore:", formData);
+
+        // 1. Salvar no Firebase
+        const docRef = await addDoc(collection(db, "users"), {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          status: "cadastro_realizado", 
+          createdAt: serverTimestamp(),
+          origin: "landing_page_7dias",
+          uid: auth?.currentUser?.uid || 'anonymous'
+        });
+
+        console.log("SUCESSO! Documento gravado com ID: ", docRef.id);
+
         setStatusMessage('Redirecionando...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        // 3. Redirecionar DIRETAMENTE para a tela de obrigado (Sem Hotmart)
+        // 3. Redirecionar para a tela de obrigado
         setCurrentView('success');
         window.scrollTo(0, 0);
         setIsLoading(false);
 
       } catch (error: any) {
-        console.error("Erro geral:", error);
-        // Mesmo com erro geral, tentamos mostrar sucesso para não travar o usuário
-        setCurrentView('success');
+        console.error("ERRO AO SALVAR:", error);
+        
+        // Alerta amigável para explicar o erro técnico
+        let msg = "Erro desconhecido.";
+        
+        if (error.code === 'permission-denied') {
+          // Mensagem ultra específica para ajudar o usuário
+          msg = `ERRO DE PERMISSÃO!\n\nPara corrigir, escolha UMA das opções:\n1. Vá no Firebase Console -> Authentication e ATIVE o provedor 'Anonymous'.\nOU\n2. Vá no Firestore Database -> Rules e mude para 'allow read, write: if true;'`;
+        } else if (error.code === 'unavailable') {
+          msg = "Serviço indisponível. Verifique sua conexão.";
+        } else {
+          msg = error.message;
+        }
+
+        alert(`Não foi possível salvar os dados:\n${msg}`);
         setIsLoading(false);
+        setStatusMessage('');
       }
     }
   };
@@ -219,7 +233,7 @@ export default function App() {
           </h1>
           
           <div className="bg-green-100 border-l-4 border-[#3a6b5d] text-[#2c5247] p-4 mb-6 text-left rounded">
-             <p className="font-bold">Seus dados foram recebidos.</p>
+             <p className="font-bold">Seus dados foram salvos com sucesso.</p>
              <p className="text-sm">Você está mais perto de transformar sua rotina.</p>
           </div>
 

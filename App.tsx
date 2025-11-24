@@ -289,7 +289,7 @@ export default function App() {
           {/* Imagem visível apenas no mobile (md:hidden) */}
           <div className="md:hidden flex justify-center mb-6">
             <img 
-              src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png" 
+              src="https://i.ibb.co/tTQmdyYK/Untitled-design-3-1.png" 
               alt="Thiago De Pizzol" 
               className="max-w-[200px] drop-shadow-xl animate-fade-in-up" 
             />

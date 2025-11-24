@@ -378,7 +378,7 @@ export default function App() {
         </div>
       </main>
 
-      <section className="py-12 bg-white/30 backdrop-blur-sm mt-16">
+      <section className="py-12 bg-white/30 backdrop-blur-sm mt-8 md:mt-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-8 text-slate-700">O que você vai conquistar</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

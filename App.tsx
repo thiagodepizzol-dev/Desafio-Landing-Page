@@ -6,7 +6,9 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
-  addDoc, 
+  addDoc,
+  doc,
+  updateDoc, 
   serverTimestamp 
 } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
@@ -75,26 +77,50 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
-  // Autenticação Anônima e Verificação de Pagamento
+  // Autenticação Anônima e Lógica de Retorno do Pagamento
   useEffect(() => {
     const init = async () => {
       // Se o Firebase não inicializou, aborta silenciosamente
       if (!auth || !db) return;
 
-      // Tenta autenticação anônima se não estiver logado
+      // 1. Tenta autenticação anônima se não estiver logado
       try {
         if (!auth.currentUser) {
            await signInAnonymously(auth);
            console.log("Usuário autenticado anonimamente.");
         }
       } catch (error: any) {
-        // Ignora erros de auth no console do usuário para não travar a experiência
-        console.warn("Autenticação anônima falhou (verifique se 'Anonymous' está ativo no Auth):", error.code);
+        console.warn("Autenticação anônima falhou:", error.code);
       }
 
+      // 2. Verifica se voltou da Hotmart com sucesso
       const params = new URLSearchParams(window.location.search);
-      if (params.get('status') === 'success') {
+      const isSuccess = params.get('status') === 'success';
+
+      if (isSuccess) {
         setCurrentView('success');
+        
+        // Recupera o ID do usuário salvo antes de ir para a Hotmart
+        const pendingUserId = localStorage.getItem('pending_user_id');
+        
+        if (pendingUserId) {
+          try {
+            console.log("Atualizando status de pagamento para o usuário:", pendingUserId);
+            const userRef = doc(db, "users", pendingUserId);
+            
+            // Atualiza o documento no Firestore
+            await updateDoc(userRef, {
+              paymentStatus: "pago",
+              updatedAt: serverTimestamp()
+            });
+            
+            console.log("Status atualizado para 'pago'!");
+            // Limpa o ID para não tentar atualizar de novo desnecessariamente
+            localStorage.removeItem('pending_user_id');
+          } catch (error) {
+            console.error("Erro ao atualizar status de pagamento:", error);
+          }
+        }
       }
     };
 
@@ -140,44 +166,52 @@ export default function App() {
     e.preventDefault();
     if (validate()) {
       setIsLoading(true);
-      setStatusMessage('Processando...');
+      setStatusMessage('Cadastrando...');
 
       try {
         if (db) {
-          console.log("Tentando salvar dados no Firestore...");
-          // Salva os campos solicitados: nome, email, celular
-          await addDoc(collection(db, "users"), {
+          console.log("Salvando pré-cadastro no Firestore...");
+          
+          // Salva os dados com status pendente
+          const docRef = await addDoc(collection(db, "users"), {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
-            status: "cadastro_realizado", 
+            status: "cadastro_inicial", 
+            paymentStatus: "pendente", // Variável indicando que ainda não pagou
             createdAt: serverTimestamp(),
             origin: "landing_page_7dias",
-            // Se o auth falhar, salva sem UID específico
             uid: auth?.currentUser?.uid || 'anonymous_guest'
           });
-          console.log("Dados salvos com sucesso na coleção 'users'.");
-        } else {
-          console.warn("Banco de dados não disponível. Pulando salvamento.");
+          
+          console.log("ID gerado:", docRef.id);
+          
+          // Salva o ID no navegador para recuperar na volta
+          localStorage.setItem('pending_user_id', docRef.id);
         }
       } catch (error: any) {
-        // Log discreto para não assustar o usuário, garantindo o fluxo
-        console.warn("Erro ao salvar no Firestore (Fluxo continua):", error.message);
+        console.warn("Erro ao salvar (continuando fluxo):", error.message);
       } finally {
-        setStatusMessage('Redirecionando...');
+        setStatusMessage('Redirecionando para Pagamento...');
         
-        // Redirecionamento garantido para a página de obrigado
+        // Constrói URL do Hotmart com parâmetros
+        const hotmartBaseUrl = "https://pay.hotmart.com/F102989418Q";
+        const params = new URLSearchParams({
+          off: 'mzsvtlfu',
+          name: formData.name,
+          email: formData.email
+          // Nota: O Hotmart preencherá automaticamente se os nomes dos campos forem compatíveis
+        });
+
+        // Delay para o usuário ler a mensagem
         setTimeout(() => {
-          setCurrentView('success');
-          window.scrollTo(0, 0);
-          setIsLoading(false);
-          setStatusMessage('');
-        }, 800);
+          window.location.href = `${hotmartBaseUrl}?${params.toString()}`;
+        }, 1000);
       }
     }
   };
 
-  // --- TELA DE OBRIGADO (Pós-Cadastro) ---
+  // --- TELA DE OBRIGADO (Pós-Pagamento) ---
   if (currentView === 'success') {
     return (
       <div
@@ -197,12 +231,12 @@ export default function App() {
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold text-slate-800 mb-4">
-            Cadastro Realizado!
+            Pagamento Confirmado!
           </h1>
           
           <div className="bg-green-100 border-l-4 border-[#3a6b5d] text-[#2c5247] p-4 mb-6 text-left rounded">
-             <p className="font-bold">Seus dados foram salvos com sucesso.</p>
-             <p className="text-sm">Você está mais perto de transformar sua rotina.</p>
+             <p className="font-bold">Bem-vindo ao Desafio!</p>
+             <p className="text-sm">Seu pagamento foi identificado e seu acesso será liberado em instantes.</p>
           </div>
 
           <p className="text-lg md:text-xl text-slate-700 mb-8 leading-relaxed">
@@ -217,17 +251,17 @@ export default function App() {
             <ul className="space-y-4 text-slate-700">
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Verifique seu E-mail:</strong> Enviamos mais informações para o endereço cadastrado.</span>
+                <span><strong>Verifique seu E-mail:</strong> O link de acesso à plataforma foi enviado para o endereço cadastrado.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Aguarde o Contato:</strong> Nossa equipe entrará em contato em breve.</span>
+                <span><strong>Whatsapp:</strong> Caso não encontre o e-mail, verifique sua caixa de spam ou entre em contato.</span>
               </li>
             </ul>
           </div>
 
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => window.location.href = window.location.origin} // Volta para a home limpa
             className="w-full sm:w-auto px-10 py-4 bg-[#3a6b5d] text-white font-bold text-lg rounded-full shadow-lg hover:bg-[#2c5247] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
           >
             VOLTAR AO INÍCIO

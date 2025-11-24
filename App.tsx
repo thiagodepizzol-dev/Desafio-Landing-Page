@@ -14,13 +14,13 @@ import { getAuth, signInAnonymously } from "firebase/auth";
 
 // PREENCHA COM SEUS DADOS DO CONSOLE DO FIREBASE AQUI:
 const firebaseConfig = {
-  apiKey: "AIzaSyBcuvdJ7rGvw9OPcogja9BdTnda7ihJZmk",
-  authDomain: "dias-3b6d2.firebaseapp.com",
-  projectId: "dias-3b6d2",
-  storageBucket: "dias-3b6d2.firebasestorage.app",
-  messagingSenderId: "761341789041",
-  appId: "1:761341789041:web:46798555abde44faedacd0",
-  measurementId: "G-9Y1K16JC7M"
+  apiKey: "AIzaSyCg3_sT2kBasVSfP_hgFJEOGrx3Yo-HzA0",
+  authDomain: "landing-page-21-dias.firebaseapp.com",
+  projectId: "landing-page-21-dias",
+  storageBucket: "landing-page-21-dias.firebasestorage.app",
+  messagingSenderId: "778155461530",
+  appId: "1:778155461530:web:fddca2f3cfdd7dc5680823",
+  measurementId: "G-CHX9DN432N"
 };
 
 // Inicialização segura do Firebase fora do componente

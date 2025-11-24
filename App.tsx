@@ -285,6 +285,16 @@ export default function App() {
       <main className="container mx-auto px-4 pt-8 md:pt-16 pb-0 grid md:grid-cols-2 gap-8 items-center">
         {/* Content Column */}
         <div className="bg-white/30 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg">
+          
+          {/* Imagem visível apenas no mobile (md:hidden) */}
+          <div className="md:hidden flex justify-center mb-6">
+            <img 
+              src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png" 
+              alt="Thiago De Pizzol" 
+              className="max-w-[200px] drop-shadow-xl animate-fade-in-up" 
+            />
+          </div>
+
           <p className="font-semibold text-slate-600 mb-2">Desafio dos 7 Dias com <span className="font-bold">Thiago De Pizzol</span></p>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">
             Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença</span>
@@ -358,7 +368,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Image Column */}
+        {/* Image Column (Apenas Desktop) */}
         <div className="hidden md:flex justify-center items-center">
           <img
             src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png"

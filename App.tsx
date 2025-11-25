@@ -416,7 +416,7 @@ export default function App() {
             
             {/* Vídeo Único */}
             <div className="flex flex-col items-center">
-              <div className="aspect-[9/16] w-full max-w-[280px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
+              <div className="aspect-[9/16] w-full max-w-[450px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
                  <YouTube
                     videoId="K_gcymad1Sc"
                     opts={{

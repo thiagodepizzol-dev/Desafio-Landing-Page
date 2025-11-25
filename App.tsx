@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
+import YouTube from 'react-youtube';
 
 // --- CONFIGURAÇÃO DO FIREBASE (MODULAR SDK V9+) ---
 import { initializeApp, getApps, getApp } from "firebase/app";
@@ -76,6 +77,15 @@ export default function App() {
   const [errors, setErrors] = useState({ name: '', phone: '', email: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Handlers para o player do YouTube
+  const onPlayerReady = (event: any) => {
+    // Opcional: event.target.playVideo();
+  };
+
+  const handleStateChange = (event: any) => {
+    // Lógica opcional de mudança de estado
+  };
 
   // Autenticação Anônima e Lógica de Retorno do Pagamento
   useEffect(() => {
@@ -280,9 +290,9 @@ export default function App() {
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
       }}
-      className="min-h-screen w-full text-slate-800 font-sans"
+      className="min-h-screen w-full text-slate-800 font-sans flex flex-col"
     >
-      <main className="container mx-auto px-4 pt-8 md:pt-16 pb-0 grid md:grid-cols-2 gap-8 items-center">
+      <main className="container mx-auto px-4 pt-8 md:pt-16 pb-0 grid md:grid-cols-2 gap-8 items-center flex-grow">
         {/* Content Column */}
         <div className="bg-white/30 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-lg">
           
@@ -394,6 +404,75 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* Seção de Depoimentos (Vídeos - YouTube Shorts) */}
+      <section className="py-12 md:py-16 bg-white/30 backdrop-blur-sm border-t border-white/20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-8 md:mb-12 text-slate-700">
+            Resultados Possíveis com o Método
+          </h2>
+          
+          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+            
+            {/* Vídeo 1 */}
+            <div className="flex flex-col items-center">
+              <div className="aspect-[9/16] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
+                 <YouTube
+                    videoId="K_gcymad1Sc"
+                    opts={{
+                      playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        rel: 0,
+                        disablekb: 1,
+                        modestbranding: 1,
+                        loop: 1,
+                        playlist: "K_gcymad1Sc", // Required for loop to work
+                      },
+                    }}
+                    onReady={onPlayerReady}
+                    onStateChange={handleStateChange}
+                    className="absolute top-1/2 left-1/2 w-[87%] h-[153%] -translate-x-1/2 -translate-y-1/2"
+                    iframeClassName="w-full h-full"
+                  />
+              </div>
+            </div>
+
+            {/* Vídeo 2 */}
+            <div className="flex flex-col items-center">
+              <div className="aspect-[9/16] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
+                  <YouTube
+                    videoId="K_gcymad1Sc"
+                    opts={{
+                      playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        rel: 0,
+                        disablekb: 1,
+                        modestbranding: 1,
+                        loop: 1,
+                        playlist: "K_gcymad1Sc", // Required for loop to work
+                      },
+                    }}
+                    onReady={onPlayerReady}
+                    onStateChange={handleStateChange}
+                    className="absolute top-1/2 left-1/2 w-[87%] h-[153%] -translate-x-1/2 -translate-y-1/2"
+                    iframeClassName="w-full h-full"
+                  />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Rodapé Simples */}
+      <footer className="bg-[#3a6b5d] text-white py-8 text-center mt-auto">
+        <div className="container mx-auto px-4">
+          <p className="font-semibold">&copy; {new Date().getFullYear()} Desafio 7 Dias. Todos os direitos reservados.</p>
+          <p className="text-sm opacity-80 mt-2">Thiago De Pizzol - Transformação e Autoconhecimento.</p>
+        </div>
+      </footer>
     </div>
   );
 }

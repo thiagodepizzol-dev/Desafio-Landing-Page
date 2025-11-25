@@ -412,36 +412,12 @@ export default function App() {
             Resultados Possíveis com o Método
           </h2>
           
-          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+          <div className="flex justify-center">
             
-            {/* Vídeo 1 */}
+            {/* Vídeo Único */}
             <div className="flex flex-col items-center">
-              <div className="aspect-[9/16] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
+              <div className="aspect-[9/16] w-full max-w-[280px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
                  <YouTube
-                    videoId="K_gcymad1Sc"
-                    opts={{
-                      playerVars: {
-                        autoplay: 1,
-                        controls: 0,
-                        rel: 0,
-                        disablekb: 1,
-                        modestbranding: 1,
-                        loop: 1,
-                        playlist: "K_gcymad1Sc", // Required for loop to work
-                      },
-                    }}
-                    onReady={onPlayerReady}
-                    onStateChange={handleStateChange}
-                    className="absolute top-1/2 left-1/2 w-[87%] h-[153%] -translate-x-1/2 -translate-y-1/2"
-                    iframeClassName="w-full h-full"
-                  />
-              </div>
-            </div>
-
-            {/* Vídeo 2 */}
-            <div className="flex flex-col items-center">
-              <div className="aspect-[9/16] w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
-                  <YouTube
                     videoId="K_gcymad1Sc"
                     opts={{
                       playerVars: {

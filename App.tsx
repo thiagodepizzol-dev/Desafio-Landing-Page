@@ -433,7 +433,7 @@ export default function App() {
                         playlist: "K_gcymad1Sc", 
                         mute: 1, // FIX: Obrigatório para Autoplay funcionar
                         playsinline: 1, // FIX: Melhora comportamento no mobile
-                        origin: typeof window !== 'undefined' ? window.location.origin : undefined,
+                        // Removido origin manual para evitar conflito de postMessage
                       },
                     }}
                     onReady={onPlayerReady}

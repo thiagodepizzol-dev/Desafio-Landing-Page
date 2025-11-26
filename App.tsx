@@ -80,7 +80,8 @@ export default function App() {
 
   // Handlers para o player do YouTube
   const onPlayerReady = (event: any) => {
-    // Opcional: event.target.playVideo();
+    // Tenta iniciar o vídeo, caso o autoplay tenha falhado
+    event.target.playVideo();
   };
 
   const handleStateChange = (event: any) => {
@@ -420,6 +421,9 @@ export default function App() {
                  <YouTube
                     videoId="K_gcymad1Sc"
                     opts={{
+                      host: 'https://www.youtube-nocookie.com',
+                      width: '100%',
+                      height: '100%',
                       playerVars: {
                         autoplay: 1,
                         controls: 0,
@@ -427,7 +431,9 @@ export default function App() {
                         disablekb: 1,
                         modestbranding: 1,
                         loop: 1,
-                        playlist: "K_gcymad1Sc", // Required for loop to work
+                        playlist: "K_gcymad1Sc", 
+                        mute: 1, // FIX: Obrigatório para Autoplay funcionar
+                        origin: typeof window !== 'undefined' ? window.location.origin : undefined, // FIX: Ajuda com erro de postMessage
                       },
                     }}
                     onReady={onPlayerReady}

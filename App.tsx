@@ -421,7 +421,6 @@ export default function App() {
                  <YouTube
                     videoId="K_gcymad1Sc"
                     opts={{
-                      host: 'https://www.youtube-nocookie.com',
                       width: '100%',
                       height: '100%',
                       playerVars: {
@@ -433,7 +432,8 @@ export default function App() {
                         loop: 1,
                         playlist: "K_gcymad1Sc", 
                         mute: 1, // FIX: Obrigatório para Autoplay funcionar
-                        origin: typeof window !== 'undefined' ? window.location.origin : undefined, // FIX: Ajuda com erro de postMessage
+                        playsinline: 1, // FIX: Melhora comportamento no mobile
+                        origin: typeof window !== 'undefined' ? window.location.origin : undefined,
                       },
                     }}
                     onReady={onPlayerReady}

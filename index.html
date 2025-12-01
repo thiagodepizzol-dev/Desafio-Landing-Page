@@ -4,22 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Desafio 7 Dias</title>
+    <!-- Favicon vazio para evitar erro 404 -->
     <link rel="icon" href="data:,">
+    <!-- Tailwind CSS via CDN (Gera aviso no console, mas é necessário para o estilo funcionar sem build complexo) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
-  </head>
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>

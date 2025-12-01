@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
 
 // --- CONFIGURAÇÃO DO FIREBASE (MODULAR SDK V9+) ---
 import { initializeApp, getApps, getApp } from "firebase/app";
@@ -41,7 +40,6 @@ try {
   // Inicializar serviços
   db = getFirestore(app);
   auth = getAuth(app);
-  console.log("Firebase inicializado para o projeto:", firebaseConfig.projectId);
   
 } catch (error) {
   console.warn("Aviso na inicialização do Firebase:", error);
@@ -54,17 +52,17 @@ const features = [
     description: 'Reduza o ruído mental e encontre o foco.',
   },
   {
-    icon: <img src="https://i.ibb.co/scgBYLk/Iniciar-Desafio-Agora-2.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
+    icon: <img src="https://i.ibb.co/scgBYLk/Iniciar-Desafio-Agora-2.png" alt="Força Interior" className="w-auto h-9 object-contain" />,
     title: 'Força Interior',
     description: 'Construa resiliência para lidar com desafios.',
   },
   {
-    icon: <img src="https://i.ibb.co/v4GXYJtk/Iniciar-Desafio-Agora-1.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
+    icon: <img src="https://i.ibb.co/v4GXYJtk/Iniciar-Desafio-Agora-1.png" alt="Presença Plena" className="w-auto h-9 object-contain" />,
     title: 'Presença Plena',
     description: 'Viva o momento presente com mais intensidade.',
   },
   {
-    icon: <img src="https://i.ibb.co/Lz2MT9tF/Iniciar-Desafio-Agora-3.png" alt="Clareza Mental" className="w-auto h-8 object-contain" />,
+    icon: <img src="https://i.ibb.co/Lz2MT9tF/Iniciar-Desafio-Agora-3.png" alt="Equilíbrio Emocional" className="w-auto h-8 object-contain" />,
     title: 'Equilíbrio Emocional',
     description: 'Aprenda a regular suas emoções de forma saudável.',
   },
@@ -88,7 +86,6 @@ export default function App() {
       try {
         if (!auth.currentUser) {
            await signInAnonymously(auth);
-           console.log("Usuário autenticado anonimamente.");
         }
       } catch (error: any) {
         console.warn("Autenticação anônima falhou:", error.code);
@@ -106,7 +103,6 @@ export default function App() {
         
         if (pendingUserId) {
           try {
-            console.log("Atualizando status de pagamento para o usuário:", pendingUserId);
             const userRef = doc(db, "users", pendingUserId);
             
             // Atualiza o documento no Firestore
@@ -115,7 +111,6 @@ export default function App() {
               updatedAt: serverTimestamp()
             });
             
-            console.log("Status atualizado para 'pago'!");
             // Limpa o ID para não tentar atualizar de novo desnecessariamente
             localStorage.removeItem('pending_user_id');
           } catch (error) {
@@ -171,8 +166,6 @@ export default function App() {
 
       try {
         if (db) {
-          console.log("Salvando pré-cadastro no Firestore...");
-          
           // Salva os dados com status pendente
           const docRef = await addDoc(collection(db, "users"), {
             name: formData.name,
@@ -184,8 +177,6 @@ export default function App() {
             origin: "landing_page_7dias",
             uid: auth?.currentUser?.uid || 'anonymous_guest'
           });
-          
-          console.log("ID gerado:", docRef.id);
           
           // Salva o ID no navegador para recuperar na volta
           localStorage.setItem('pending_user_id', docRef.id);
@@ -438,7 +429,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* --- SEÇÃO DEPOIMENTO (NOVA) --- */}
+      {/* --- SEÇÃO DEPOIMENTO (LIMPA E CORRIGIDA) --- */}
       <section className="py-12 md:py-16 bg-white/20 backdrop-blur-sm mt-8 border-t border-white/20">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-700 mb-8">
@@ -451,8 +442,7 @@ export default function App() {
                   height="642" 
                   src="https://www.youtube.com/embed/K_gcymad1Sc" 
                   title="Depoimento de Aluna" 
-                  // allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" // REMOVIDO PARA EVITAR ERROS
-                  allow="autoplay; encrypted-media; picture-in-picture; web-share" 
+                  allow="encrypted-media; picture-in-picture; web-share" 
                   referrerPolicy="strict-origin-when-cross-origin" 
                   allowFullScreen
                   loading="lazy"

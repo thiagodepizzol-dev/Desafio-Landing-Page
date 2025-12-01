@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
-import YouTube from 'react-youtube';
 
 // --- CONFIGURAÇÃO DO FIREBASE (MODULAR SDK V9+) ---
 import { initializeApp, getApps, getApp } from "firebase/app";
@@ -77,16 +76,6 @@ export default function App() {
   const [errors, setErrors] = useState({ name: '', phone: '', email: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-
-  // Handlers para o player do YouTube
-  const onPlayerReady = (event: any) => {
-    // Tenta iniciar o vídeo, caso o autoplay tenha falhado
-    event.target.playVideo();
-  };
-
-  const handleStateChange = (event: any) => {
-    // Lógica opcional de mudança de estado
-  };
 
   // Autenticação Anônima e Lógica de Retorno do Pagamento
   useEffect(() => {
@@ -308,10 +297,10 @@ export default function App() {
 
           <p className="font-semibold text-slate-600 mb-2">Desafio dos 7 Dias com <span className="font-bold">Thiago De Pizzol</span></p>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight">
-            Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença</span>
+            Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença com <span className="text-red-500/90">apenas 10 minutos por dia.</span></span>
           </h1>
           <p className="mt-2 text-lg text-slate-600">
-            7 Técnicas respiratórias para equilíbrio do sistema nervoso.
+            7 Técnicas respiratórias para equilíbriar sua mente e emoções.
           </p>
 
           <div className="mt-8 space-y-4">
@@ -389,7 +378,49 @@ export default function App() {
         </div>
       </main>
 
-      <section className="py-12 bg-white/30 backdrop-blur-sm mt-8 md:mt-16">
+      {/* --- NOVA SEÇÃO DE DORES (ANSIEDADE/ESTRESSE) --- */}
+      <section className="py-12 md:py-16 mt-8 md:mt-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-slate-700 leading-snug">
+            Você sente que está <br className="md:hidden" /> <span className="text-red-500/80">perdendo o controle?</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            
+            {/* Dor 1: Mente Acelerada */}
+            <div className="bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-sm border-l-4 border-red-400/70 hover:shadow-md transition-all hover:-translate-y-1">
+              <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span className="text-2xl">🤯</span> Mente Agitada
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Você deita para dormir, mas os pensamentos não param. O dia todo é uma corrida contra o tempo dentro da sua própria cabeça.
+              </p>
+            </div>
+
+            {/* Dor 2: Sintomas Físicos */}
+            <div className="bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-sm border-l-4 border-red-400/70 hover:shadow-md transition-all hover:-translate-y-1">
+              <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span className="text-2xl">🫀</span> Aperto no Peito
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Aquela sensação física de angústia repentina, coração acelerado ou falta de ar, mesmo sem estar fazendo esforço físico.
+              </p>
+            </div>
+
+            {/* Dor 3: Irritabilidade/Medo */}
+            <div className="bg-white/50 backdrop-blur-sm p-6 rounded-2xl shadow-sm border-l-4 border-red-400/70 hover:shadow-md transition-all hover:-translate-y-1">
+              <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span className="text-2xl">⚡</span> Estresse Constante
+              </h3>
+              <p className="text-slate-600 leading-relaxed">
+                Pequenas coisas tiram você do sério. A sensação de sobrecarga faz você travar ou reagir de forma explosiva com quem ama.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 bg-white/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-8 text-slate-700">O que você vai conquistar</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -406,44 +437,26 @@ export default function App() {
         </div>
       </section>
 
-      {/* Seção de Depoimentos (Vídeos - YouTube Shorts) */}
-      <section className="py-12 md:py-16 bg-white/30 backdrop-blur-sm border-t border-white/20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-8 md:mb-12 text-slate-700">
-            Resultados Possíveis com o Método
+      {/* --- SEÇÃO DEPOIMENTO (NOVA) --- */}
+      <section className="py-12 md:py-16 bg-white/20 backdrop-blur-sm mt-8 border-t border-white/20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-700 mb-8">
+            Ela passou pelo treinamento!
           </h2>
-          
           <div className="flex justify-center">
-            
-            {/* Vídeo Único */}
-            <div className="flex flex-col items-center">
-              <div className="aspect-[9/16] w-full max-w-[450px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black relative">
-                 <YouTube
-                    videoId="K_gcymad1Sc"
-                    opts={{
-                      width: '100%',
-                      height: '100%',
-                      playerVars: {
-                        autoplay: 1,
-                        controls: 0,
-                        rel: 0,
-                        disablekb: 1,
-                        modestbranding: 1,
-                        loop: 1,
-                        playlist: "K_gcymad1Sc", 
-                        mute: 1, // FIX: Obrigatório para Autoplay funcionar
-                        playsinline: 1, // FIX: Melhora comportamento no mobile
-                        // Removido origin manual para evitar conflito de postMessage
-                      },
-                    }}
-                    onReady={onPlayerReady}
-                    onStateChange={handleStateChange}
-                    className="absolute top-1/2 left-1/2 w-[87%] h-[153%] -translate-x-1/2 -translate-y-1/2"
-                    iframeClassName="w-full h-full"
-                  />
-              </div>
-            </div>
-
+             <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
+                <iframe 
+                  width="361" 
+                  height="642" 
+                  src="https://www.youtube.com/embed/K_gcymad1Sc" 
+                  title="Depoimento" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  referrerPolicy="strict-origin-when-cross-origin" 
+                  allowFullScreen
+                  className="max-w-full h-auto aspect-[9/16] w-[320px] md:w-[361px]"
+                ></iframe>
+             </div>
           </div>
         </div>
       </section>
@@ -455,6 +468,26 @@ export default function App() {
           <p className="text-sm opacity-80 mt-2">Thiago De Pizzol - Transformação e Autoconhecimento.</p>
         </div>
       </footer>
+
+      {/* --- BOTÃO FLUTUANTE DO WHATSAPP --- */}
+      <a
+        href="https://wa.me/5517981463355?text=Desafio"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 flex items-center justify-center animate-bounce-slow"
+        aria-label="Fale conosco no WhatsApp"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          fill="currentColor"
+          className="text-white"
+          viewBox="0 0 16 16"
+        >
+          <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+        </svg>
+      </a>
     </div>
   );
 }

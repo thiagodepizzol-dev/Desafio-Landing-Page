@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 // --- CONFIGURAÇÃO DO FIREBASE (MODULAR SDK V9+) ---

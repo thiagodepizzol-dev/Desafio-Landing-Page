@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BrainIcon, StrengthIcon, MeditationIcon, LotusIcon } from './components/Icons';
 
@@ -449,11 +450,12 @@ export default function App() {
                   width="361" 
                   height="642" 
                   src="https://www.youtube.com/embed/K_gcymad1Sc" 
-                  title="Depoimento" 
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  title="Depoimento de Aluna" 
+                  // allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" // REMOVIDO PARA EVITAR ERROS
+                  allow="autoplay; encrypted-media; picture-in-picture; web-share" 
                   referrerPolicy="strict-origin-when-cross-origin" 
                   allowFullScreen
+                  loading="lazy"
                   className="max-w-full h-auto aspect-[9/16] w-[320px] md:w-[361px]"
                 ></iframe>
              </div>

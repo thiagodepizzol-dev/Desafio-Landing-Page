@@ -436,14 +436,13 @@ export default function App() {
             Ela passou pelo treinamento!
           </h2>
           <div className="flex justify-center">
-             <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
+             <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 bg-black">
                 <iframe 
                   width="361" 
                   height="642" 
                   src="https://www.youtube.com/embed/K_gcymad1Sc" 
                   title="Depoimento de Aluna" 
-                  allow="encrypted-media; picture-in-picture; web-share" 
-                  referrerPolicy="strict-origin-when-cross-origin" 
+                  allow="autoplay; fullscreen"
                   allowFullScreen
                   loading="lazy"
                   className="max-w-full h-auto aspect-[9/16] w-[320px] md:w-[361px]"

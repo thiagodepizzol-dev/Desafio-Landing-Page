@@ -276,7 +276,7 @@ export default function App() {
         // Constrói URL do Hotmart com parâmetros
         const hotmartBaseUrl = "https://pay.hotmart.com/F102989418Q";
         const params = new URLSearchParams({
-          off: 'mzsvtlfu',
+          off: 'lkux89fa', // Oferta atualizada
           name: formData.name,
           email: formData.email
           // Nota: O Hotmart preencherá automaticamente se os nomes dos campos forem compatíveis

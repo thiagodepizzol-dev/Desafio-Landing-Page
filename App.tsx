@@ -157,6 +157,16 @@ export default function App() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Função auxiliar para gerar senha aleatória
+  const generateRandomPassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#";
+    let password = "";
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (validate()) {
@@ -165,17 +175,23 @@ export default function App() {
 
       try {
         if (db) {
-          // Salva os dados com status pendente
+          // Gera uma senha aleatória para o novo usuário
+          const generatedPassword = generateRandomPassword();
+
+          // Salva os dados com status pendente e a senha gerada
           const docRef = await addDoc(collection(db, "users"), {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
+            password: generatedPassword, // Nova senha salva aqui
             status: "cadastro_inicial", 
             paymentStatus: "pendente", // Variável indicando que ainda não pagou
             createdAt: serverTimestamp(),
             origin: "landing_page_7dias",
             uid: auth?.currentUser?.uid || 'anonymous_guest'
           });
+          
+          console.log("Usuário criado com ID:", docRef.id);
           
           // Salva o ID no navegador para recuperar na volta
           localStorage.setItem('pending_user_id', docRef.id);

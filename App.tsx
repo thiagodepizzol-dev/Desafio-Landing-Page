@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 
 // --- CONFIGURAÇÃO DO FIREBASE (MODULAR SDK V9+) ---
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
   addDoc,
   doc,
   updateDoc, 
+  getDoc, // Importado para ler a senha salva
   serverTimestamp 
 } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { 
+  getAuth, 
+  signInAnonymously,
+  createUserWithEmailAndPassword, // Importado para criar o usuário no segundo app
+  Auth
+} from "firebase/auth";
 
-// CONFIGURAÇÃO ATUALIZADA - PROJETO: landing-page-21-dias
+// 1. CONFIGURAÇÃO - PROJETO ATUAL (LANDING PAGE)
 const firebaseConfig = {
   apiKey: "AIzaSyCg3_sT2kBasVSfP_hgFJEOGrx3Yo-HzA0",
   authDomain: "landing-page-21-dias.firebaseapp.com",
@@ -23,26 +29,57 @@ const firebaseConfig = {
   measurementId: "G-CHX9DN432N"
 };
 
-// Inicialização segura do Firebase fora do componente
-let app;
+// 2. CONFIGURAÇÃO - PROJETO DE DESTINO (ONDE O USUÁRIO VAI LOGAR)
+const targetAppConfig = {
+  apiKey: "AIzaSyBcuvdJ7rGvw9OPcogja9BdTnda7ihJZmk",
+  authDomain: "dias-3b6d2.firebaseapp.com",
+  projectId: "dias-3b6d2",
+  storageBucket: "dias-3b6d2.firebasestorage.app",
+  messagingSenderId: "761341789041",
+  appId: "1:761341789041:web:46798555abde44faedacd0",
+  measurementId: "G-9Y1K16JC7M"
+};
+
+// Inicialização segura do Firebase Principal (Landing Page)
+let app: FirebaseApp;
 let db: any;
 let auth: any;
 
 try {
-  // Padrão Singleton para evitar recriação em hot-reloads
+  // Padrão Singleton para o app DEFAULT
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
-    app = getApp();
+    app = getApp(); // Pega o app default
   }
   
-  // Inicializar serviços
   db = getFirestore(app);
   auth = getAuth(app);
   
 } catch (error) {
-  console.warn("Aviso na inicialização do Firebase:", error);
+  console.warn("Aviso na inicialização do Firebase Principal:", error);
 }
+
+// Função para inicializar o App Secundário (Target)
+const getTargetAuth = (): Auth | null => {
+  try {
+    let targetApp: FirebaseApp;
+    // Verifica se já existe um app com o nome "TargetApp" para não duplicar
+    const existingApps = getApps();
+    const foundApp = existingApps.find(a => a.name === "TargetApp");
+
+    if (!foundApp) {
+      targetApp = initializeApp(targetAppConfig, "TargetApp"); // Nomeia a instância secundária
+    } else {
+      targetApp = foundApp;
+    }
+    
+    return getAuth(targetApp);
+  } catch (error) {
+    console.error("Erro ao inicializar Firebase Secundário:", error);
+    return null;
+  }
+};
 
 const features = [
   {
@@ -78,10 +115,10 @@ export default function App() {
   // Autenticação Anônima e Lógica de Retorno do Pagamento
   useEffect(() => {
     const init = async () => {
-      // Se o Firebase não inicializou, aborta silenciosamente
+      // Se o Firebase principal não inicializou, aborta silenciosamente
       if (!auth || !db) return;
 
-      // 1. Tenta autenticação anônima se não estiver logado
+      // 1. Tenta autenticação anônima se não estiver logado (para poder ler/escrever no Firestore da LP)
       try {
         if (!auth.currentUser) {
            await signInAnonymously(auth);
@@ -104,16 +141,51 @@ export default function App() {
           try {
             const userRef = doc(db, "users", pendingUserId);
             
-            // Atualiza o documento no Firestore
-            await updateDoc(userRef, {
-              paymentStatus: "pago",
-              updatedAt: serverTimestamp()
-            });
+            // A. Busca os dados do usuário para pegar a SENHA gerada
+            const userSnap = await getDoc(userRef);
             
-            // Limpa o ID para não tentar atualizar de novo desnecessariamente
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              const { email, password } = userData;
+
+              // B. Atualiza o status na Landing Page
+              await updateDoc(userRef, {
+                paymentStatus: "pago",
+                updatedAt: serverTimestamp()
+              });
+              
+              console.log("Status de pagamento atualizado na LP.");
+
+              // C. Cria o usuário no Firebase de Destino (App Principal)
+              if (email && password) {
+                const targetAuth = getTargetAuth();
+                if (targetAuth) {
+                  try {
+                    console.log("Tentando criar usuário no App de Destino...");
+                    await createUserWithEmailAndPassword(targetAuth, email, password);
+                    console.log("SUCESSO: Usuário criado no App de Destino!");
+                    
+                    // Opcional: Atualizar na LP que a conta foi criada
+                    await updateDoc(userRef, { accountCreatedInTarget: true });
+
+                  } catch (createError: any) {
+                    // Ignora erro se o usuário já existir (auth/email-already-in-use)
+                    if (createError.code === 'auth/email-already-in-use') {
+                      console.log("Usuário já existe no App de Destino.");
+                      await updateDoc(userRef, { accountCreatedInTarget: true, accountExists: true });
+                    } else {
+                      console.error("Erro ao criar usuário no App de Destino:", createError);
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Limpa o ID para não tentar rodar o script novamente
             localStorage.removeItem('pending_user_id');
+            
           } catch (error) {
-            console.error("Erro ao atualizar status de pagamento:", error);
+            console.error("Erro no processo de pós-pagamento:", error);
           }
         }
       }
@@ -243,7 +315,7 @@ export default function App() {
           
           <div className="bg-green-100 border-l-4 border-[#3a6b5d] text-[#2c5247] p-4 mb-6 text-left rounded">
              <p className="font-bold">Bem-vindo ao Desafio!</p>
-             <p className="text-sm">Seu pagamento foi identificado e seu acesso será liberado em instantes.</p>
+             <p className="text-sm">Seu pagamento foi identificado e sua conta foi criada.</p>
           </div>
 
           <p className="text-lg md:text-xl text-slate-700 mb-8 leading-relaxed">

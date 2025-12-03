@@ -375,9 +375,16 @@ export default function App() {
           </div>
 
           <p className="font-semibold text-slate-600 mb-2">Desafio dos 7 Dias com <span className="font-bold">Thiago De Pizzol</span></p>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">
             Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença com <span className="text-red-500/90">apenas 10 minutos por dia.</span></span>
           </h1>
+          
+          <div className="my-4 bg-red-500/90 p-4 rounded-lg shadow-md">
+            <p className="text-white font-bold text-sm md:text-base leading-snug">
+              "Respiração é o único método capaz de desligar a resposta de luta ou fuga em menos de 3 minutos."
+            </p>
+          </div>
+
           <p className="mt-2 text-lg text-slate-600">
             7 Técnicas respiratórias para equilíbriar sua mente e emoções.
           </p>

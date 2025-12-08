@@ -8,13 +8,16 @@ import {
   addDoc,
   doc,
   updateDoc, 
-  getDoc, // Importado para ler a senha salva
+  getDoc,
+  query,
+  where,
+  getDocs,
   serverTimestamp 
 } from "firebase/firestore";
 import { 
   getAuth, 
   signInAnonymously,
-  createUserWithEmailAndPassword, // Importado para criar o usuário no segundo app
+  createUserWithEmailAndPassword, 
   Auth
 } from "firebase/auth";
 
@@ -46,11 +49,10 @@ let db: any;
 let auth: any;
 
 try {
-  // Padrão Singleton para o app DEFAULT
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
-    app = getApp(); // Pega o app default
+    app = getApp(); 
   }
   
   db = getFirestore(app);
@@ -64,12 +66,11 @@ try {
 const getTargetAuth = (): Auth | null => {
   try {
     let targetApp: FirebaseApp;
-    // Verifica se já existe um app com o nome "TargetApp" para não duplicar
     const existingApps = getApps();
     const foundApp = existingApps.find(a => a.name === "TargetApp");
 
     if (!foundApp) {
-      targetApp = initializeApp(targetAppConfig, "TargetApp"); // Nomeia a instância secundária
+      targetApp = initializeApp(targetAppConfig, "TargetApp");
     } else {
       targetApp = foundApp;
     }
@@ -83,42 +84,61 @@ const getTargetAuth = (): Auth | null => {
 
 const features = [
   {
-    icon: <img src="https://i.ibb.co/nhLZZxv/Iniciar-Desafio-Agora.png" alt="Clareza Mental" className="w-auto h-9 object-contain" />,
+    icon: <img src="https://i.ibb.co/nhLZZxv/Iniciar-Desafio-Agora.png" alt="Ícone Clareza Mental - Desafio 7 Dias" className="w-auto h-9 object-contain" />,
     title: 'Clareza Mental',
     description: 'Reduza o ruído mental e encontre o foco.',
   },
   {
-    icon: <img src="https://i.ibb.co/scgBYLk/Iniciar-Desafio-Agora-2.png" alt="Força Interior" className="w-auto h-9 object-contain" />,
+    icon: <img src="https://i.ibb.co/scgBYLk/Iniciar-Desafio-Agora-2.png" alt="Ícone Força Interior - Desafio 7 Dias" className="w-auto h-9 object-contain" />,
     title: 'Força Interior',
     description: 'Construa resiliência para lidar com desafios.',
   },
   {
-    icon: <img src="https://i.ibb.co/v4GXYJtk/Iniciar-Desafio-Agora-1.png" alt="Presença Plena" className="w-auto h-9 object-contain" />,
+    icon: <img src="https://i.ibb.co/v4GXYJtk/Iniciar-Desafio-Agora-1.png" alt="Ícone Presença Plena - Desafio 7 Dias" className="w-auto h-9 object-contain" />,
     title: 'Presença Plena',
     description: 'Viva o momento presente com mais intensidade.',
   },
   {
-    icon: <img src="https://i.ibb.co/Lz2MT9tF/Iniciar-Desafio-Agora-3.png" alt="Equilíbrio Emocional" className="w-auto h-8 object-contain" />,
+    icon: <img src="https://i.ibb.co/Lz2MT9tF/Iniciar-Desafio-Agora-3.png" alt="Ícone Equilíbrio Emocional - Desafio 7 Dias" className="w-auto h-8 object-contain" />,
     title: 'Equilíbrio Emocional',
     description: 'Aprenda a regular suas emoções de forma saudável.',
   },
 ];
 
+const textTestimonials = [
+  {
+    text: "Eu vivia com falta de ar por ansiedade. Em 2 semanas de Protocolo, senti meu peito abrir. Durmo a noite toda agora.",
+    author: "Juliana K.",
+    initials: "JK"
+  },
+  {
+    text: "Simples e direto. 10 minutos que mudam o meu dia. O Thiago explica de um jeito que a gente entende o porquê faz.",
+    author: "Roberto M.",
+    initials: "RM"
+  },
+  {
+    text: "Minha digestão melhorou, minha pele melhorou. É impressionante como a respiração afeta tudo.",
+    author: "Carla D.",
+    initials: "CD"
+  }
+];
+
 export default function App() {
-  // State para controlar a visualização: 'landing' ou 'success'
   const [currentView, setCurrentView] = useState<'landing' | 'success'>('landing');
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
   const [errors, setErrors] = useState({ name: '', phone: '', email: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  
+  // States para a tela de sucesso
+  const [accessCredentials, setAccessCredentials] = useState<{email: string, password: string, phone: string} | null>(null);
+  const [fetchingCredentials, setFetchingCredentials] = useState(false);
+  const [fetchError, setFetchError] = useState('');
 
-  // Autenticação Anônima e Lógica de Retorno do Pagamento
   useEffect(() => {
     const init = async () => {
-      // Se o Firebase principal não inicializou, aborta silenciosamente
       if (!auth || !db) return;
 
-      // 1. Tenta autenticação anônima se não estiver logado (para poder ler/escrever no Firestore da LP)
       try {
         if (!auth.currentUser) {
            await signInAnonymously(auth);
@@ -127,66 +147,83 @@ export default function App() {
         console.warn("Autenticação anônima falhou:", error.code);
       }
 
-      // 2. Verifica se voltou da Hotmart com sucesso
       const params = new URLSearchParams(window.location.search);
       const isSuccess = params.get('status') === 'success';
 
       if (isSuccess) {
         setCurrentView('success');
+        setFetchingCredentials(true);
+        setFetchError('');
         
-        // Recupera o ID do usuário salvo antes de ir para a Hotmart
-        const pendingUserId = localStorage.getItem('pending_user_id');
+        const urlUserId = params.get('uid');
+        const pendingUserId = urlUserId || localStorage.getItem('pending_user_id');
         
         if (pendingUserId) {
           try {
-            const userRef = doc(db, "users", pendingUserId);
+            console.log("Buscando usuário:", pendingUserId);
             
-            // A. Busca os dados do usuário para pegar a SENHA gerada
-            const userSnap = await getDoc(userRef);
-            
-            if (userSnap.exists()) {
-              const userData = userSnap.data();
-              const { email, password } = userData;
+            // 1. Tenta buscar pelo ID do documento (padrão)
+            let userSnap = await getDoc(doc(db, "users", pendingUserId));
+            let userData = userSnap.exists() ? userSnap.data() : null;
+            let docRef = userSnap.exists() ? userSnap.ref : null;
 
-              // B. Atualiza o status na Landing Page
-              await updateDoc(userRef, {
+            // 2. Se não achou e o ID parece ser um UID de Auth (longo), tenta buscar pelo campo 'uid'
+            if (!userData && pendingUserId.length > 20) {
+               console.log("Documento não encontrado pelo ID direto. Tentando buscar pelo campo 'uid'...");
+               const q = query(collection(db, "users"), where("uid", "==", pendingUserId));
+               const querySnapshot = await getDocs(q);
+               if (!querySnapshot.empty) {
+                 userSnap = querySnapshot.docs[0];
+                 userData = userSnap.data();
+                 docRef = userSnap.ref;
+                 console.log("Usuário encontrado via query uid!");
+               }
+            }
+            
+            if (userData && docRef) {
+              const { email, password, phone } = userData;
+              // Se não tiver senha salva (usuário antigo), define uma mensagem
+              const displayPassword = password || "Senha enviada por e-mail";
+              
+              setAccessCredentials({ email, password: displayPassword, phone });
+
+              // Atualiza o status na Landing Page
+              await updateDoc(docRef, {
                 paymentStatus: "pago",
                 updatedAt: serverTimestamp()
               });
               
-              console.log("Status de pagamento atualizado na LP.");
-
-              // C. Cria o usuário no Firebase de Destino (App Principal)
+              // Cria o usuário no App Principal se tiver senha válida
               if (email && password) {
                 const targetAuth = getTargetAuth();
                 if (targetAuth) {
                   try {
-                    console.log("Tentando criar usuário no App de Destino...");
                     await createUserWithEmailAndPassword(targetAuth, email, password);
-                    console.log("SUCESSO: Usuário criado no App de Destino!");
-                    
-                    // Opcional: Atualizar na LP que a conta foi criada
-                    await updateDoc(userRef, { accountCreatedInTarget: true });
-
+                    await updateDoc(docRef, { accountCreatedInTarget: true });
                   } catch (createError: any) {
-                    // Ignora erro se o usuário já existir (auth/email-already-in-use)
                     if (createError.code === 'auth/email-already-in-use') {
-                      console.log("Usuário já existe no App de Destino.");
-                      await updateDoc(userRef, { accountCreatedInTarget: true, accountExists: true });
-                    } else {
-                      console.error("Erro ao criar usuário no App de Destino:", createError);
+                      await updateDoc(docRef, { accountCreatedInTarget: true, accountExists: true });
                     }
                   }
                 }
               }
+            } else {
+              setFetchError("Usuário não encontrado no banco de dados.");
             }
             
-            // Limpa o ID para não tentar rodar o script novamente
-            localStorage.removeItem('pending_user_id');
+            if (!urlUserId) {
+               localStorage.removeItem('pending_user_id');
+            }
             
-          } catch (error) {
+          } catch (error: any) {
             console.error("Erro no processo de pós-pagamento:", error);
+            setFetchError("Erro ao recuperar dados: " + error.message);
+          } finally {
+            setFetchingCredentials(false);
           }
+        } else {
+          setFetchingCredentials(false);
+          setFetchError("ID do usuário não identificado.");
         }
       }
     };
@@ -229,7 +266,6 @@ export default function App() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Função auxiliar para gerar senha aleatória
   const generateRandomPassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#";
     let password = "";
@@ -247,47 +283,55 @@ export default function App() {
 
       try {
         if (db) {
-          // Gera uma senha aleatória para o novo usuário
           const generatedPassword = generateRandomPassword();
-
-          // Salva os dados com status pendente e a senha gerada
           const docRef = await addDoc(collection(db, "users"), {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
-            password: generatedPassword, // Nova senha salva aqui
+            password: generatedPassword, 
             status: "cadastro_inicial", 
-            paymentStatus: "pendente", // Variável indicando que ainda não pagou
+            paymentStatus: "pendente", 
             createdAt: serverTimestamp(),
             origin: "landing_page_7dias",
             uid: auth?.currentUser?.uid || 'anonymous_guest'
           });
           
-          console.log("Usuário criado com ID:", docRef.id);
-          
-          // Salva o ID no navegador para recuperar na volta
           localStorage.setItem('pending_user_id', docRef.id);
         }
       } catch (error: any) {
         console.warn("Erro ao salvar (continuando fluxo):", error.message);
       } finally {
         setStatusMessage('Redirecionando para Pagamento...');
-        
-        // Constrói URL do Hotmart com parâmetros
         const hotmartBaseUrl = "https://pay.hotmart.com/F102989418Q";
         const params = new URLSearchParams({
-          off: 'lkux89fa', // Oferta atualizada
+          off: 'lkux89fa',
           name: formData.name,
           email: formData.email
-          // Nota: O Hotmart preencherá automaticamente se os nomes dos campos forem compatíveis
         });
 
-        // Delay para o usuário ler a mensagem
         setTimeout(() => {
           window.location.href = `${hotmartBaseUrl}?${params.toString()}`;
         }, 1000);
       }
     }
+  };
+
+  const getWhatsAppLink = () => {
+    if (!accessCredentials) return "#";
+    const { email, password, phone } = accessCredentials;
+    const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+    const formattedPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+
+    const message = `Boas vindas ao Desafio de 7 dias com Thiago De Pizzol! Estou enviando essa mensagem para liberar os dados para seu acesso ao Desafio!
+
+Login: ${email}
+Senha: ${password}
+
+Clique no link abaixo e coloque as credenciais acima para iniciar o desafio:
+
+https://thiagodepizzol.com.br/app/`;
+
+    return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
   };
 
   // --- TELA DE OBRIGADO (Pós-Pagamento) ---
@@ -302,49 +346,108 @@ export default function App() {
         }}
         className="min-h-screen w-full text-slate-800 font-sans flex items-center justify-center p-4"
       >
-        <div className="bg-white/60 backdrop-blur-md p-8 md:p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center border border-white/50 animate-fade-in">
-          <div className="mx-auto bg-[#7ca982] w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-lg transform hover:scale-110 transition-transform duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-12 h-12 text-white">
+        <div className="bg-white/90 backdrop-blur-md p-6 md:p-12 rounded-3xl shadow-2xl max-w-3xl w-full text-center border border-white/50 animate-fade-in my-8">
+          <div className="mx-auto bg-[#7ca982] w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mb-6 shadow-lg transform hover:scale-110 transition-transform duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-10 h-10 md:w-12 md:h-12 text-white">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
           
-          <h1 className="text-3xl md:text-5xl font-bold text-slate-800 mb-4">
+          <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-2">
             Pagamento Confirmado!
           </h1>
+          <p className="text-slate-600 mb-8">Seu acesso foi liberado com sucesso.</p>
           
-          <div className="bg-green-100 border-l-4 border-[#3a6b5d] text-[#2c5247] p-4 mb-6 text-left rounded">
-             <p className="font-bold">Bem-vindo ao Desafio!</p>
-             <p className="text-sm">Seu pagamento foi identificado e sua conta foi criada.</p>
-          </div>
+          {/* Estados de Carregamento e Erro */}
+          {fetchingCredentials && (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#3a6b5d] mx-auto mb-4"></div>
+              <p className="text-slate-500">Recuperando suas credenciais...</p>
+            </div>
+          )}
 
-          <p className="text-lg md:text-xl text-slate-700 mb-8 leading-relaxed">
-            Parabéns por dar o primeiro passo no <span className="font-bold text-[#3a6b5d]">Desafio dos 7 Dias</span>.
-          </p>
+          {fetchError && !fetchingCredentials && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-8 border border-red-200">
+              <p className="font-bold">Atenção</p>
+              <p>{fetchError}</p>
+              <p className="text-sm mt-2">Por favor, entre em contato com o suporte no WhatsApp.</p>
+            </div>
+          )}
 
-          <div className="bg-white/70 rounded-2xl p-8 mb-8 text-left shadow-inner">
+          {/* Exibição das Credenciais */}
+          {accessCredentials && (
+            <div className="bg-white border-2 border-[#3a6b5d]/30 rounded-2xl p-6 md:p-8 mb-8 shadow-lg relative overflow-hidden animate-fade-in-up">
+               <div className="absolute top-0 left-0 w-full h-2 bg-[#3a6b5d]"></div>
+               
+               <h3 className="font-bold text-xl text-[#3a6b5d] mb-4 uppercase tracking-wide">
+                 Seus Dados de Acesso
+               </h3>
+               
+               <div className="flex flex-col gap-4 text-left max-w-md mx-auto">
+                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                   <p className="text-xs text-slate-500 uppercase font-bold mb-1">Login (E-mail)</p>
+                   <p className="font-mono text-lg text-slate-800 break-all">{accessCredentials.email}</p>
+                 </div>
+                 
+                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                   <p className="text-xs text-slate-500 uppercase font-bold mb-1">Senha</p>
+                   <p className="font-mono text-xl text-[#3a6b5d] font-bold tracking-wider">{accessCredentials.password}</p>
+                 </div>
+               </div>
+
+               <div className="mt-6">
+                 <a 
+                   href={getWhatsAppLink()}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="inline-flex items-center gap-2 bg-[#25D366] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#20bd5a] transition-colors shadow-md w-full md:w-auto justify-center"
+                 >
+                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                     <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+                   </svg>
+                   Salvar dados no meu WhatsApp
+                 </a>
+                 <p className="text-xs text-slate-500 mt-2">Clique para abrir uma conversa com você mesmo e salvar a senha.</p>
+               </div>
+            </div>
+          )}
+
+          <div className="bg-white/70 rounded-2xl p-6 md:p-8 mb-8 text-left shadow-inner">
             <h3 className="font-bold text-xl mb-4 flex items-center gap-3 text-slate-800">
               <span className="bg-[#3a6b5d] text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">!</span>
-              Próximos Passos
+              Como Acessar
             </h3>
-            <ul className="space-y-4 text-slate-700">
+            <ul className="space-y-4 text-slate-700 text-sm md:text-base">
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Verifique seu E-mail:</strong> O link de acesso à plataforma foi enviado para o endereço cadastrado.</span>
+                <span><strong>Passo 1:</strong> Copie sua senha acima.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
-                <span><strong>Whatsapp:</strong> Caso não encontre o e-mail, verifique sua caixa de spam ou entre em contato.</span>
+                <span><strong>Passo 2:</strong> Clique no botão abaixo para ir ao Portal do Aluno.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1.5 w-2 h-2 bg-[#3a6b5d] rounded-full flex-shrink-0"></div>
+                <span><strong>Passo 3:</strong> Use seu e-mail e a senha gerada para entrar.</span>
               </li>
             </ul>
           </div>
-
-          <button 
-            onClick={() => window.location.href = window.location.origin} // Volta para a home limpa
-            className="w-full sm:w-auto px-10 py-4 bg-[#3a6b5d] text-white font-bold text-lg rounded-full shadow-lg hover:bg-[#2c5247] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-          >
-            VOLTAR AO INÍCIO
-          </button>
+          
+          <div className="flex flex-col gap-3">
+            <a 
+              href="https://thiagodepizzol.com.br/app/"
+              className="w-full sm:w-auto px-10 py-4 bg-[#3a6b5d] text-white font-bold text-lg rounded-full shadow-lg hover:bg-[#2c5247] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block mx-auto"
+            >
+              ACESSAR PORTAL AGORA
+            </a>
+            
+            <button 
+              onClick={() => window.location.href = window.location.origin} 
+              className="text-slate-500 hover:text-slate-700 text-sm font-semibold mt-2"
+            >
+              Voltar ao Início
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -376,7 +479,7 @@ export default function App() {
 
           <p className="font-semibold text-slate-600 mb-2">Desafio dos 7 Dias com <span className="font-bold">Thiago De Pizzol</span></p>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">
-            Transforme Estresse e Ansiedade em <span className="text-[#3a6b5d]">Força e Presença com <span className="text-red-500/90">apenas 10 minutos por dia.</span></span>
+            Reduza ansiedade e aperto no peito<span className="text-[#3a6b5d]"> com 7 técnicas respiratórias <span className="text-red-500/90">em apenas 10 minutos por dia.</span></span>
           </h1>
           
           <div className="my-4 bg-red-500/90 p-4 rounded-lg shadow-md">
@@ -428,6 +531,7 @@ export default function App() {
             </div>
 
             <div className="pt-4 text-center">
+              <p className="text-sm text-slate-500 mt-1">Por apenas</p>
               <p className="text-4xl font-bold text-slate-700">3 x R$9,90</p>
               <p className="text-sm text-slate-500 mt-1">Acesso imediato às 7 técnicas respiratórias</p>
             </div>
@@ -447,22 +551,86 @@ export default function App() {
                 </div>
               ) : (
                 <div className="w-full bg-[#3a6b5d] text-white font-bold py-4 rounded-lg shadow-lg uppercase tracking-wider flex items-center justify-center">
-                  INICIAR DESAFIO AGORA
+                  Quero controlar minha ansiedade em 7 dias
                 </div>
               )}
             </button>
+            
+            {/* Garantia */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-center opacity-90">
+              
+              <p className="text-xs md:text-sm text-slate-600">
+                <strong>🛡 Garantia total:</strong> Se em 7 dias você não sentir diferença, devolvo seu dinheiro.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Image Column (Apenas Desktop) */}
-        <div className="hidden md:flex justify-center items-center">
+        <div className="hidden md:flex justify-center items-center relative">
+          
+          {/* Frase Flutuante (Depoimento) - Atualizado: Sem fundo, texto preto, linha única */}
+          <div className="absolute top-0 left-0 z-20">
+             <p className="text-black font-bold italic text-lg lg:text-xl whitespace-nowrap leading-tight">
+               "Eu só quero parar esse aperto no peito AGORA."
+             </p>
+             <p className="text-xs text-black/80 italic font-normal text-right mt-1">
+               mensagem recebida no instagram
+             </p>
+          </div>
+
           <img
             src="https://i.ibb.co/848jsfj6/Untitled-design-3-1.png"
-            alt="Homem sorrindo"
+            alt="Thiago De Pizzol especialista em respiração"
             className="max-w-md lg:max-w-lg drop-shadow-2xl animate-fade-in-up"
           />
         </div>
       </main>
+
+      {/* --- NOVA SEÇÃO DEPOIMENTOS TEXTUAIS (ABAIXO DO HERO) --- */}
+      <section className="py-8 md:py-12 bg-white/20 backdrop-blur-sm border-y border-white/20">
+        <div className="container mx-auto px-4">
+          
+          {/* FRASE FLUTUANTE (MOBILE ONLY) - Antes do slide */}
+          <div className="md:hidden text-center mb-6">
+             <p className="text-black font-bold italic text-lg leading-tight">
+               "Eu só quero parar esse aperto no peito AGORA."
+             </p>
+             <p className="text-xs text-black/80 italic font-normal mt-1">
+               mensagem recebida no instagram
+             </p>
+          </div>
+
+          {/* Versão DESKTOP (Grid) */}
+          <div className="hidden md:grid md:grid-cols-3 gap-6">
+            {textTestimonials.map((testimonial, index) => (
+              <div key={index} className="bg-white/60 p-6 rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col h-full border border-white/40">
+                <svg className="w-8 h-8 text-[#3a6b5d]/30 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 18.3137 19.3307 21 16.017 21H14.017ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 18.3137 10.3303 21 7.0166 21H5.0166Z"></path></svg>
+                <p className="text-slate-700 italic mb-4 flex-grow">"{testimonial.text}"</p>
+                <div className="flex items-center gap-2 mt-auto">
+                   <div className="w-8 h-8 rounded-full bg-[#3a6b5d]/20 flex items-center justify-center text-[#3a6b5d] font-bold text-xs">{testimonial.initials}</div>
+                   <p className="font-bold text-[#3a6b5d] text-sm">- {testimonial.author}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Versão MOBILE (Slide/Carousel Horizontal) */}
+          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 px-2">
+            {textTestimonials.map((testimonial, index) => (
+              <div key={index} className="min-w-[85vw] snap-center bg-white/60 p-6 rounded-xl shadow-sm flex flex-col h-full border border-white/40">
+                <svg className="w-8 h-8 text-[#3a6b5d]/30 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H15.017C14.4647 8 14.017 8.44772 14.017 9V11C14.017 11.5523 13.5693 12 13.017 12H12.017V5H22.017V15C22.017 18.3137 19.3307 21 16.017 21H14.017ZM5.0166 21L5.0166 18C5.0166 16.8954 5.91203 16 7.0166 16H10.0166C10.5689 16 11.0166 15.5523 11.0166 15V9C11.0166 8.44772 10.5689 8 10.0166 8H6.0166C5.46432 8 5.0166 8.44772 5.0166 9V11C5.0166 11.5523 4.56889 12 4.0166 12H3.0166V5H13.0166V15C13.0166 18.3137 10.3303 21 7.0166 21H5.0166Z"></path></svg>
+                <p className="text-slate-700 italic mb-4 flex-grow">"{testimonial.text}"</p>
+                <div className="flex items-center gap-2 mt-auto">
+                   <div className="w-8 h-8 rounded-full bg-[#3a6b5d]/20 flex items-center justify-center text-[#3a6b5d] font-bold text-xs">{testimonial.initials}</div>
+                   <p className="font-bold text-[#3a6b5d] text-sm">- {testimonial.author}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
 
       {/* --- NOVA SEÇÃO DE DORES (ANSIEDADE/ESTRESSE) --- */}
       <section className="py-12 md:py-16 mt-8 md:mt-16">
@@ -506,7 +674,100 @@ export default function App() {
         </div>
       </section>
 
-      <section className="py-12 bg-white/30 backdrop-blur-sm">
+      {/* --- NOVA SEÇÃO: O QUE VOCÊ VAI RECEBER --- */}
+      <section className="py-12 bg-[#3a6b5d]/5 backdrop-blur-sm border-t border-white/20">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-slate-700 uppercase tracking-wide">
+            O que você vai receber
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Item 1 - 7 técnicas */}
+            <div className="bg-white/60 p-5 rounded-xl flex items-center gap-4 shadow-sm border border-white/50">
+              <div className="bg-[#3a6b5d] text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                <span className="font-bold text-xl">7</span>
+              </div>
+              <p className="font-semibold text-slate-700 text-lg">7 técnicas</p>
+            </div>
+
+            {/* Item 2 - Aulas rápidas */}
+            <div className="bg-white/60 p-5 rounded-xl flex items-center gap-4 shadow-sm border border-white/50">
+               <div className="bg-[#3a6b5d] text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                 </svg>
+               </div>
+               <p className="font-semibold text-slate-700 text-lg">Aulas rápidas e eficientes de 10 minutos</p>
+            </div>
+
+            {/* Item 3 - Acesso vitalício */}
+            <div className="bg-white/60 p-5 rounded-xl flex items-center gap-4 shadow-sm border border-white/50">
+               <div className="bg-[#3a6b5d] text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                 </svg>
+               </div>
+               <p className="font-semibold text-slate-700 text-lg">Acesso vitalício as técnicas</p>
+            </div>
+
+            {/* Item 4 - Guia PDF */}
+            <div className="bg-white/60 p-5 rounded-xl flex items-center gap-4 shadow-sm border border-white/50">
+               <div className="bg-[#3a6b5d] text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                 </svg>
+               </div>
+               <p className="font-semibold text-slate-700 text-lg">Guia PDF</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO: QUEM É THIAGO DE PIZZOL --- */}
+      <section className="py-12 md:py-16 bg-white/20 backdrop-blur-sm border-t border-white/20">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 max-w-6xl mx-auto">
+            
+            {/* Imagem Desktop: Esquerda / Mobile: Topo */}
+            <div className="w-full md:w-1/2 flex justify-center">
+               <img
+                 src="https://thiagodepizzol.com.br/img/Untitled%20design%20(5).jpg"
+                 alt="Thiago De Pizzol professor de yoga"
+                 className="rounded-2xl shadow-2xl max-w-full h-auto border-4 border-white/50"
+               />
+            </div>
+
+            {/* Texto */}
+            <div className="w-full md:w-1/2 text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-6 uppercase tracking-wide">
+                Quem é Thiago De Pizzol
+              </h2>
+              <p className="text-slate-700 mb-4 text-lg leading-relaxed">
+                Professor de Yoga, especialista em respiração, meditador há 17 anos, criador do Programa Online de Yoga e do método Moksha Experience.
+              </p>
+              <p className="text-slate-700 mb-6 leading-relaxed">
+                Mais de 1500 aulas ministradas, centenas de alunos atendidos e milhares transformados através da respiração consciente.
+              </p>
+
+              <p className="font-bold text-[#3a6b5d] mb-3 text-lg">Ensina uma prática baseada em:</p>
+              <ul className="space-y-2 mb-8">
+                {['neurociência', 'fisiologia respiratória', 'regulação emocional', 'Yoga tradicional', 'atenção plena'].map(item => (
+                  <li key={item} className="flex items-center gap-3 text-slate-700">
+                    <span className="text-green-600 bg-green-100 rounded-full w-6 h-6 flex items-center justify-center text-xs">✔</span> {item}
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-slate-800 font-medium italic border-l-4 border-[#3a6b5d] pl-4 py-3 bg-white/40 rounded-r-lg shadow-sm">
+                "Você vai aprender com alguém que vive isso todos os dias."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SEÇÃO DE CONQUISTAS (FEATURES) --- */}
+      <section className="py-12 bg-white/30 backdrop-blur-sm mt-0 border-t border-white/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-8 text-slate-700">O que você vai conquistar</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -523,8 +784,42 @@ export default function App() {
         </div>
       </section>
 
+      {/* --- SEÇÃO CUSTO + VALOR --- */}
+      <section className="py-12 bg-[#3a6b5d] text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Desafio dos 7 Dias – 7 Técnicas Respiratórias</h2>
+
+          <div className="bg-white/10 p-8 rounded-2xl max-w-3xl mx-auto backdrop-blur-sm border border-white/20">
+            <p className="text-lg mb-2 opacity-90">Apenas</p>
+            <p className="text-5xl md:text-6xl font-bold mb-2">3x R$ 9,90</p>
+            <p className="text-xl opacity-80 mb-6">(R$ 29,70 total)</p>
+
+            <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-4 text-sm md:text-base font-medium opacity-90 mb-8">
+              <span>Acesso imediato</span>
+              <span className="hidden md:inline">|</span>
+              <span>Suporte por Whatsapp</span>
+              <span className="hidden md:inline">|</span>
+              <span>Garantia total de satisfação</span>
+            </div>
+
+            <div className="bg-white/20 p-4 rounded-xl inline-block">
+              <p className="font-semibold text-lg">
+                "Por menos que o preço de um café, você aprende a controlar ansiedade com as próprias mãos."
+              </p>
+            </div>
+
+            <button
+               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+               className="block w-full md:w-auto mx-auto mt-8 bg-white text-[#3a6b5d] font-bold py-4 px-10 rounded-full shadow-lg hover:bg-green-50 transition-colors uppercase tracking-wider"
+            >
+              Quero começar agora
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* --- SEÇÃO DEPOIMENTO (LIMPA E CORRIGIDA) --- */}
-      <section className="py-12 md:py-16 bg-white/20 backdrop-blur-sm mt-8 border-t border-white/20">
+      <section className="py-12 md:py-16 bg-white/20 backdrop-blur-sm mt-0 border-t border-white/20">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-slate-700 mb-8">
             Ela passou pelo treinamento!
